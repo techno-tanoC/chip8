@@ -1,4 +1,5 @@
 use std::io::Read;
+use super::error::Error;
 
 const RAM_SIZE: usize = 1 << 12;
 
@@ -30,13 +31,14 @@ impl Ram {
         Ram { buf: [0; RAM_SIZE] }
     }
 
-    pub fn load<R: Read>(&mut self, r: &mut R) {
+    pub fn load<R: Read>(&mut self, r: &mut R) -> Result<(), Error> {
         self.load_fontset();
         loop {
-            if r.read(&mut self.buf[0x200..]).unwrap() == 0 {
+            if r.read(&mut self.buf[0x200..])? == 0 {
                 break;
             }
         }
+        Ok(())
     }
 
     fn load_fontset(&mut self) {
