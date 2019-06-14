@@ -4,7 +4,7 @@ use std::io::Read;
 const RAM_SIZE: usize = 1 << 12;
 
 pub struct Ram {
-    buf: [u8; RAM_SIZE],
+    pub(crate) buf: [u8; RAM_SIZE],
 }
 
 impl Ram {
