@@ -1,5 +1,5 @@
-use std::io::Read;
 use super::error::Error;
+use std::io::Read;
 
 const RAM_SIZE: usize = 1 << 12;
 
