@@ -8,3 +8,5 @@ impl From<std::io::Error> for Error {
         Error(e.to_string())
     }
 }
+
+pub type Result<T> = std::result::Result<T, Error>;
