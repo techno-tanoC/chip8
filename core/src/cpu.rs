@@ -1,5 +1,6 @@
 use super::ram::Ram;
 use super::ret::Ret::*;
+use super::address;
 
 #[derive(Debug)]
 pub struct Cpu {
@@ -39,88 +40,177 @@ impl Cpu {
                 unimplemented!()
             },
             // 00EE
+            // ???
             (0x0, 0x0, 0xE, 0xE) => {
-                unimplemented!()
+                let pc = self.stack[self.sp as usize - 1];
+                self.sp -= 1;
+                Jump(pc + 2)
             },
             // 0nnn
             (0x0, n1, n2, n3) => {
-                unimplemented!()
+                let nnn = address::addr(n1, n2, n3);
+                Jump(nnn)
             },
             // 1nnn
             (0x1, n1, n2, n3) => {
-                unimplemented!()
+                let nnn = address::addr(n1, n2, n3);
+                Jump(nnn)
             },
             // 2nnn
             (0x2, n1, n2, n3) => {
-                unimplemented!()
+                self.stack[self.sp as usize] = self.pc;
+                self.sp += 1;
+                let nnn = address::addr(n1, n2, n3);
+                Jump(nnn)
             },
             // 3xkk
             (0x3, x, k1, k2) => {
-                unimplemented!()
+                let vx = self.v[address::idx(x)];
+                let kk = address::var(k1, k2);
+                if vx == kk {
+                    Skip
+                } else {
+                    Next
+                }
             },
             // 4xkk
             (0x4, x, k1, k2) => {
-                unimplemented!()
+                let vx = self.v[address::idx(x)];
+                let kk = address::var(k1, k2);
+                if vx != kk {
+                    Skip
+                } else {
+                    Next
+                }
             },
             // 5xy0
             (0x5, x, y, 0x0) => {
-                unimplemented!()
+                let vx = self.v[address::idx(x)];
+                let vy = self.v[address::idx(y)];
+                if vx == vy {
+                    Skip
+                } else {
+                    Next
+                }
             },
             // 6xkk
             (0x6, x, k1, k2) => {
-                unimplemented!()
+                let kk = address::var(k1, k2);
+                self.v[address::idx(x)] = kk;
+                Next
             },
             // 7xkk
             (0x7, x, k1, k2) => {
-                unimplemented!()
+                let kk = address::var(k1, k2);
+                let x = address::idx(x);
+                // ???
+                self.v[x] = self.v[x].overflowing_add(kk).0;
+                Next
             },
             // 8xy0
             (0x8, x, y, 0x0) => {
-                unimplemented!()
+                let ix = address::idx(x);
+                let iy = address::idx(y);
+                self.v[ix] = self.v[iy];
+                Next
             },
             // 8xy1
             (0x8, x, y, 0x1) => {
-                unimplemented!()
+                let ix = address::idx(x);
+                let iy = address::idx(y);
+                self.v[ix] |= self.v[iy];
+                Next
             },
             // 8xy2
             (0x8, x, y, 0x2) => {
-                unimplemented!()
+                let ix = address::idx(x);
+                let iy = address::idx(y);
+                self.v[ix] &= self.v[iy];
+                Next
             },
             // 8xy3
             (0x8, x, y, 0x3) => {
-                unimplemented!()
+                let ix = address::idx(x);
+                let iy = address::idx(y);
+                self.v[ix] ^= self.v[iy];
+                Next
             },
             // 8xy4
             (0x8, x, y, 0x4) => {
-                unimplemented!()
+                let ix = address::idx(x);
+                let iy = address::idx(y);
+                let xy = self.v[ix] as u16 + self.v[iy] as u16;
+                if xy > 0xff {
+                    self.v[0xf] = 1;
+                } else {
+                    self.v[0xf] = 0;
+                }
+                self.v[ix] = (xy & 0xff) as u8;
+                Next
             },
             // 8xy5
             (0x8, x, y, 0x5) => {
-                unimplemented!()
+                let ix = address::idx(x);
+                let iy = address::idx(y);
+                let vx = self.v[ix];
+                let vy = self.v[iy];
+                let (val, overflow) = vx.overflowing_sub(vy);
+                if !overflow {
+                    self.v[0xff] = 1;
+                } else {
+                    self.v[0xff] = 0;
+                }
+                self.v[ix] = val;
+                Next
             },
             // 8xy6
             (0x8, x, y, 0x6) => {
-                unimplemented!()
+                let ix = address::idx(x);
+                self.v[0xf] = self.v[ix] & 0x1;
+                self.v[ix] >>= 1;
+                Next
             },
             // 8xy7
             (0x8, x, y, 0x7) => {
-                unimplemented!()
+                let ix = address::idx(x);
+                let iy = address::idx(y);
+                let vx = self.v[ix];
+                let vy = self.v[iy];
+                let (val, overflow) = vx.overflowing_sub(vy);
+                if !overflow {
+                    self.v[0xff] = 1;
+                } else {
+                    self.v[0xff] = 0;
+                }
+                self.v[ix] = val;
+                Next
             },
             // 8xyE
             (0x8, x, y, 0xE) => {
-                unimplemented!()
+                let ix = address::idx(x);
+                self.v[0xf] = self.v[ix] >> 7;
+                self.v[ix] = self.v[ix].overflowing_mul(2).0;
+                Next
             },
             // 9xy0
             (0x9, x, y, 0x0) => {
-                unimplemented!()
+                let vx = self.v[address::idx(x)];
+                let vy = self.v[address::idx(y)];
+                if vx != vy {
+                    Skip
+                } else {
+                    Next
+                }
             },
             // Annn
             (0xA, n1, n2, n3) => {
-                unimplemented!()
+                self.i = address::addr(n1, n2, n3);
+                Next
             },
             // Bnnn
             (0xB, n1, n2, n3) => {
-                unimplemented!()
+                let pc = address::addr(n1, n2, n3) + self.v[0] as u16;
+                Jump(pc)
             },
             // Cxkk
             (0xC, x, k1, k2) => {
