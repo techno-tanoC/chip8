@@ -218,6 +218,13 @@ impl Cpu {
             },
             // Dxyn
             (0xD, x, y, n) => {
+                let ix = address::idx(x);
+                let iy = address::idx(y);
+                let vx = self.v[ix];
+                let vy = self.v[iy];
+                let since = self.i as usize;
+                let until = since + address::idx(n);
+                let bytes = (&ram.buf[since..until]).to_vec();
                 unimplemented!()
             },
             // Ex9E
@@ -242,27 +249,45 @@ impl Cpu {
             },
             // Fx18
             (0xF, x, 0x1, 0x8) => {
-                unimplemented!()
+                Next
             },
             // Fx1E
             (0xF, x, 0x1, 0xE) => {
-                unimplemented!()
+                let ix = address::idx(x);
+                self.i += self.v[ix] as u16;
+                Next
             }
             // Fx29
             (0xF, x, 0x2, 0x9) => {
-                unimplemented!()
+                let ix = address::idx(x);
+                let vx = self.v[ix];
+                self.i = address::fontaddr(vx);
+                Next
             },
             // Fx33
             (0xF, x, 0x3, 0x3) => {
-                unimplemented!()
+                let i = self.i as usize;
+                let vx = self.v[address::idx(x)];
+                ram.buf[i] = (vx / 100) as u8 % 10;
+                ram.buf[i + 1] = (vx / 10) as u8 % 10;
+                ram.buf[i + 2] = vx % 10;
+                Next
             },
             // Fx55
             (0xF, x, 0x5, 0x5) => {
-                unimplemented!()
+                for n in 0..(x + 1) {
+                    let an = address::idx(n);
+                    ram.buf[self.i as usize + an] = self.v[an];
+                }
+                Next
             },
             // Fx65
             (0xF, x, 0x6, 0x5) => {
-                unimplemented!()
+                for n in 0..(x + 1) {
+                    let an = address::idx(n);
+                    self.v[an] = ram.buf[self.i as usize + an]
+                }
+                Next
             },
             _ => {
                 panic!("N/A {:x}{:x}{:x}{:x}", o1, o2, o3, o4);
